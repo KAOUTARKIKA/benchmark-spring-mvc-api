@@ -8,8 +8,8 @@ public class BenchmarkSpringMvcApiApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(BenchmarkSpringMvcApiApplication.class, args);
-        System.out.println("Spring Boot app started at http://0.0.0.0:8083/api/");
-        System.out.println("Prometheus metrics available at http://0.0.0.0:8083/actuator/prometheus");
+        System.out.println("Spring Boot app started at http://0.0.0.0:8080/");
+        System.out.println("Prometheus metrics available at http://0.0.0.0:9404/actuator/prometheus");
     }
 
 }

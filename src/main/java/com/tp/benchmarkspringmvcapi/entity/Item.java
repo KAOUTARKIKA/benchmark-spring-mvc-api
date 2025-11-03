@@ -1,6 +1,6 @@
 package com.tp.benchmarkspringmvcapi.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
@@ -8,10 +8,11 @@ import jakarta.validation.constraints.Size;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "item")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Item implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -27,11 +28,6 @@ public class Item implements Serializable {
     private String sku;
 
     @NotNull
-    @Size(max = 128)
-    @Column(name = "name", nullable = false, length = 128)
-    private String name;
-
-    @NotNull
     @DecimalMin(value = "0.0")
     @Column(name = "price", nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
@@ -40,14 +36,12 @@ public class Item implements Serializable {
     @Column(name = "stock", nullable = false)
     private Integer stock;
 
-    @NotNull
     @Column(name = "updated_at", nullable = false)
-    private Instant updatedAt;
+    private LocalDateTime updatedAt;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)
-    @JsonIgnore
     private Category category;
 
     public Item() {
@@ -69,14 +63,6 @@ public class Item implements Serializable {
         this.sku = sku;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public BigDecimal getPrice() {
         return price;
     }
@@ -93,11 +79,11 @@ public class Item implements Serializable {
         this.stock = stock;
     }
 
-    public Instant getUpdatedAt() {
+    public LocalDateTime getUpdatedAt() {
         return updatedAt;
     }
 
-    public void setUpdatedAt(Instant updatedAt) {
+    public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
 
@@ -109,22 +95,10 @@ public class Item implements Serializable {
         this.category = category;
     }
 
-    @Transient
-    public Long getCategoryId() {
-        return this.category != null ? this.category.getId() : null;
-    }
-
-    public void setCategoryId(Long categoryId) {
-        if (this.category == null) {
-            this.category = new Category();
-        }
-        this.category.setId(categoryId);
-    }
-
     @PrePersist
     @PreUpdate
     public void onUpdate() {
-        this.updatedAt = Instant.now();
+        this.updatedAt = LocalDateTime.now();
     }
 
     @Override
@@ -132,11 +106,11 @@ public class Item implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Item item = (Item) o;
-        return sku.equals(item.sku);
+        return sku != null && sku.equals(item.sku);
     }
 
     @Override
     public int hashCode() {
-        return sku.hashCode();
+        return sku != null ? sku.hashCode() : 0;
     }
 }

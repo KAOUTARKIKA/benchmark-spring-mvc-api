@@ -1,7 +1,5 @@
 package com.tp.benchmarkspringmvcapi.controller;
 
-
-import com.tp.benchmarkspringmvcapi.dto.PageResponse;
 import com.tp.benchmarkspringmvcapi.entity.Item;
 import com.tp.benchmarkspringmvcapi.service.ItemService;
 import jakarta.validation.Valid;
@@ -10,7 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Optional;
+import java.net.URI;
+import java.util.List;
 
 @RestController
 @RequestMapping("/items")
@@ -24,47 +23,67 @@ public class ItemController {
     }
 
     @GetMapping
-    public ResponseEntity<PageResponse<Item>> list(
+    public ResponseEntity<List<Item>> list(
             @RequestParam(required = false) Long categoryId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "10") int size) {
 
-        PageResponse<Item> result = (categoryId != null)
-                ? itemService.listByCategory(categoryId, page, size)
-                : itemService.list(page, size);
+        List<Item> result;
+        if (categoryId != null) {
+            result = itemService.listByCategory(categoryId, page, size);
+        } else {
+            result = itemService.list(page, size);
+        }
 
         return ResponseEntity.ok(result);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Item> get(@PathVariable Long id) {
-        Optional<Item> item = itemService.get(id);
-        return item
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        Item item = itemService.get(id);
+        if (item == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(item);
     }
 
     @PostMapping
     public ResponseEntity<Item> create(@Valid @RequestBody Item item) {
         Item created = itemService.create(item);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        if (created == null) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+        return ResponseEntity.created(URI.create("/items/" + created.getId())).body(created);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Item> update(
             @PathVariable Long id,
             @Valid @RequestBody Item payload) {
-        Optional<Item> updated = itemService.update(id, payload);
-        return updated
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        Item existing = itemService.get(id);
+        if (existing == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        payload.setId(id);
+        Item updated = itemService.update(payload);
+        if (updated == null) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+        return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        boolean deleted = itemService.delete(id);
-        return deleted
-                ? ResponseEntity.noContent().build()
-                : ResponseEntity.notFound().build();
+        Item existing = itemService.get(id);
+        if (existing == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        boolean deleted = itemService.delete(existing);
+        if (!deleted) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+        return ResponseEntity.noContent().build();
     }
 }

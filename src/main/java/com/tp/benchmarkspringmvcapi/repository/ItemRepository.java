@@ -10,9 +10,12 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ItemRepository extends JpaRepository<Item, Long> {
-    long countByCategoryId(Long categoryId);
 
-    Page<Item> findByCategoryId(Long categoryId, Pageable pageable);
-    @Query("SELECT i FROM Item i JOIN FETCH i.category c WHERE c.id = :categoryId ORDER BY i.id")
+    // Mode baseline sans JOIN FETCH (N+1 possible)
+    @Query("SELECT i FROM Item i WHERE i.category.id = :categoryId ORDER BY i.id")
+    Page<Item> findByCategoryId(@Param("categoryId") Long categoryId, Pageable pageable);
+
+    // Mode optimisé avec JOIN FETCH (anti-N+1)
+    @Query("SELECT i FROM Item i JOIN FETCH i.category WHERE i.category.id = :categoryId ORDER BY i.id")
     Page<Item> findByCategoryIdWithJoinFetch(@Param("categoryId") Long categoryId, Pageable pageable);
 }
